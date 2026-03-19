@@ -1,0 +1,7 @@
+node_modules/
+config.json
+logs/
+client/dist/
+.claude/
+*.log
+.DS_Store

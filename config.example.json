@@ -1,0 +1,20 @@
+{
+  "workspaces": [
+    {
+      "id": "example-workspace-id",
+      "name": "my-workspace",
+      "path": "/path/to/your/workspace"
+    }
+  ],
+  "repos": [
+    {
+      "id": "example-repo-id",
+      "name": "my-project",
+      "path": "/path/to/your/workspace/my-project",
+      "devCommand": "npm run dev",
+      "defaultPort": 3000,
+      "portRange": [3000, 3009],
+      "workspaceId": "example-workspace-id"
+    }
+  ]
+}
