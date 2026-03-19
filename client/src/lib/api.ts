@@ -28,6 +28,15 @@ export interface RepoConfig {
   workspaceId?: string;
 }
 
+export interface WorktreeHealth {
+  behindMain: number;
+  aheadOfMain: number;
+  isDirty: boolean;
+  isMerged: boolean;
+  lastCommitAge: number;
+  lastCommitDate: string;
+}
+
 export interface WorktreeInfo {
   path: string;
   branch: string;
@@ -38,6 +47,7 @@ export interface WorktreeInfo {
   ports: { port: number; pid: number; command: string }[];
   claudeSessions: { pid: number; cwd: string }[];
   devServer: { pid: number; port: number; running: boolean } | null;
+  health: WorktreeHealth;
 }
 
 export const api = {

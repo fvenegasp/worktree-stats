@@ -1,19 +1,24 @@
+import { useState } from "react";
 import type { WorktreeInfo } from "../lib/api";
 import { PortBadge } from "./PortBadge";
 import { ClaudeIndicator } from "./ClaudeIndicator";
 import { ProcessControls } from "./ProcessControls";
-import { useState } from "react";
+import { HealthBadges } from "./HealthBadges";
+import { LogViewer } from "./LogViewer";
 import { api } from "../lib/api";
 
 interface Props {
   worktree: WorktreeInfo;
   repoName: string;
+  logs: { path: string; line: string }[];
   onDeleted?: () => void;
 }
 
-export function WorktreeCard({ worktree, repoName, onDeleted }: Props) {
+export function WorktreeCard({ worktree, repoName, logs, onDeleted }: Props) {
   const [deleting, setDeleting] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   const isRunning = worktree.devServer?.running ?? false;
+  const hasLogs = logs.some((l) => l.path === worktree.path);
 
   const handleDelete = async () => {
     if (!confirm(`Delete worktree at ${worktree.path}?`)) return;
@@ -33,7 +38,9 @@ export function WorktreeCard({ worktree, repoName, onDeleted }: Props) {
   return (
     <div
       className={`group relative rounded-xl border transition-all duration-300 ${
-        isRunning
+        worktree.health.isMerged && !worktree.isMain
+          ? "border-emerald-500/15 bg-emerald-500/[0.02] opacity-70"
+          : isRunning
           ? "border-emerald-500/20 bg-emerald-500/[0.02]"
           : "border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700/60"
       }`}
@@ -45,7 +52,7 @@ export function WorktreeCard({ worktree, repoName, onDeleted }: Props) {
 
       <div className="p-4">
         {/* Header row */}
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mb-2 flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {worktree.isMain ? (
@@ -74,6 +81,21 @@ export function WorktreeCard({ worktree, repoName, onDeleted }: Props) {
                 running={isRunning}
                 port={worktree.devServer?.port}
               />
+            )}
+            {isRunning && (
+              <button
+                onClick={() => setShowLogs(!showLogs)}
+                className={`rounded-md p-1.5 transition-colors ${
+                  showLogs
+                    ? "bg-zinc-800 text-zinc-300"
+                    : "text-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-400"
+                }`}
+                title="Toggle logs"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+              </button>
             )}
             {!worktree.isMain && (
               <button
@@ -106,12 +128,20 @@ export function WorktreeCard({ worktree, repoName, onDeleted }: Props) {
               <PortBadge key={p.port} port={p.port} active={true} />
             ))}
           <ClaudeIndicator sessions={worktree.claudeSessions} />
+          <HealthBadges health={worktree.health} isMain={worktree.isMain} />
           {worktree.commitHash && (
             <span className="rounded-md border border-zinc-800/50 bg-zinc-800/30 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600">
               {worktree.commitHash.slice(0, 7)}
             </span>
           )}
         </div>
+
+        {/* Log viewer */}
+        {showLogs && isRunning && (
+          <div className="mt-3">
+            <LogViewer logs={logs} worktreePath={worktree.path} />
+          </div>
+        )}
       </div>
     </div>
   );

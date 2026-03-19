@@ -7,7 +7,7 @@ import { RepoRegistration } from "../components/RepoRegistration";
 import { api, type RepoConfig, type WorkspaceConfig } from "../lib/api";
 
 export function Dashboard() {
-  const { worktrees, connected } = useWebSocket();
+  const { worktrees, connected, logs } = useWebSocket();
   const { repos, workspaces, refresh } = useRepos();
   const [createForRepo, setCreateForRepo] = useState<RepoConfig | null>(null);
   const [deletingRepo, setDeletingRepo] = useState<string | null>(null);
@@ -250,6 +250,7 @@ export function Dashboard() {
                             key={wt.path}
                             worktree={wt}
                             repoName={repo.name}
+                            logs={logs}
                           />
                         ))}
                       </div>

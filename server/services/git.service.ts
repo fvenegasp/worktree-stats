@@ -64,6 +64,87 @@ export function removeWorktree(repoPath: string, wtPath: string): void {
   });
 }
 
+export interface WorktreeHealth {
+  behindMain: number;
+  aheadOfMain: number;
+  isDirty: boolean;
+  isMerged: boolean;
+  lastCommitAge: number; // seconds since last commit
+  lastCommitDate: string; // ISO string
+}
+
+export function getWorktreeHealth(repoPath: string, wtPath: string, branch: string): WorktreeHealth {
+  const defaults: WorktreeHealth = {
+    behindMain: 0,
+    aheadOfMain: 0,
+    isDirty: false,
+    isMerged: false,
+    lastCommitAge: 0,
+    lastCommitDate: "",
+  };
+
+  try {
+    // Find default branch (main or master)
+    let defaultBranch = "main";
+    try {
+      const branches = execSync(`git -C "${repoPath}" branch --list main master`, {
+        encoding: "utf-8",
+        timeout: 3000,
+      }).trim();
+      if (branches.includes("master") && !branches.includes("main")) {
+        defaultBranch = "master";
+      }
+    } catch {}
+
+    // Behind/ahead of main
+    try {
+      const counts = execSync(
+        `git -C "${wtPath}" rev-list --left-right --count ${defaultBranch}...HEAD 2>/dev/null`,
+        { encoding: "utf-8", timeout: 3000 }
+      ).trim();
+      const [behind, ahead] = counts.split(/\s+/).map(Number);
+      defaults.behindMain = behind || 0;
+      defaults.aheadOfMain = ahead || 0;
+    } catch {}
+
+    // Dirty working tree
+    try {
+      const status = execSync(`git -C "${wtPath}" status --porcelain 2>/dev/null`, {
+        encoding: "utf-8",
+        timeout: 3000,
+      }).trim();
+      defaults.isDirty = status.length > 0;
+    } catch {}
+
+    // Is branch merged into main?
+    try {
+      const merged = execSync(
+        `git -C "${repoPath}" branch --merged ${defaultBranch} 2>/dev/null`,
+        { encoding: "utf-8", timeout: 3000 }
+      );
+      defaults.isMerged = merged.split("\n").some(
+        (b) => b.trim() === branch
+      );
+    } catch {}
+
+    // Last commit date
+    try {
+      const dateStr = execSync(
+        `git -C "${wtPath}" log -1 --format=%cI 2>/dev/null`,
+        { encoding: "utf-8", timeout: 3000 }
+      ).trim();
+      if (dateStr) {
+        defaults.lastCommitDate = dateStr;
+        defaults.lastCommitAge = Math.floor(
+          (Date.now() - new Date(dateStr).getTime()) / 1000
+        );
+      }
+    } catch {}
+  } catch {}
+
+  return defaults;
+}
+
 export function parseBranchObjective(branch: string): string {
   // Pattern: type/number-description or type/description
   const match = branch.match(

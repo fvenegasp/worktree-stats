@@ -19,6 +19,15 @@ export interface AppConfig {
   repos: RepoConfig[];
 }
 
+export interface WorktreeHealth {
+  behindMain: number;
+  aheadOfMain: number;
+  isDirty: boolean;
+  isMerged: boolean;
+  lastCommitAge: number;
+  lastCommitDate: string;
+}
+
 export interface WorktreeInfo {
   path: string;
   branch: string;
@@ -29,6 +38,7 @@ export interface WorktreeInfo {
   ports: PortInfo[];
   claudeSessions: ClaudeSession[];
   devServer: ProcessStatus | null;
+  health: WorktreeHealth;
 }
 
 export interface PortInfo {
